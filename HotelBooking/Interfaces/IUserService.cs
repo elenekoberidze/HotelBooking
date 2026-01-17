@@ -13,7 +13,7 @@ namespace HotelBooking.Interfaces
         /// This method adds new user.
         /// </summary>
         /// <param name="user">New user.</param>
-        Task CreateUserAsync(User user);
+        Task CreateUserAsync(User user, UserProfile profile);
 
         /// <summary>
         /// This method deletes user.

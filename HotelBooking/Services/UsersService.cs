@@ -10,22 +10,23 @@ using System.Threading.Tasks;
 
 namespace HotelBooking.Services
 {
-    internal class UsersService : IUserService
+    internal class UsersService(HotelBookingContext context) : IUserService
     {
-        private readonly HotelBookingContext hotelBookingContext;
-
-        public UsersService()
-        {
-            hotelBookingContext = new HotelBookingContext();
-        }
+        private readonly HotelBookingContext hotelBookingContext = context;
 
         /// <inheritdoc/>
-        public async Task CreateUserAsync(User user)
+        public async Task CreateUserAsync(User user, UserProfile profile)
         {
+            bool emailExists = await hotelBookingContext.Users
+                .AnyAsync(u => u.Email == user.Email);
+
+            if (emailExists)
+                throw new Exception("Email already exists");
+
             await hotelBookingContext.Users.AddAsync(user);
+            await hotelBookingContext.UserProfiles.AddAsync(profile);
             await hotelBookingContext.SaveChangesAsync();
         }
-
         /// <inheritdoc/>
         public async Task DeleteUserAsync(int id)
         {
