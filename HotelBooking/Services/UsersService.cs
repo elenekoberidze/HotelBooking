@@ -84,5 +84,8 @@ namespace HotelBooking.Services
                 .Include(u => u.UserProfile)
                 .FirstOrDefaultAsync(u => u.UserId == id);
         }
+
+       
+        }
     }
-}
+

@@ -1,4 +1,5 @@
 ﻿using HotelBooking.Data;
+using HotelBooking.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -8,176 +9,151 @@ using System.Threading.Tasks;
 
 namespace HotelBooking.Services
 {
-    internal class HotelBookingService(HotelBookingContext context)
+    internal class HotelBookingService : IHotelBookingService
     {
-        private readonly HotelBookingContext hotelBookingContext = context;
-
-        public async Task GetActiveUsersWithProfiles()
+        private readonly HotelBookingContext hotelBookingContext;
+        public HotelBookingService()
         {
-            var result = await hotelBookingContext.Users
+            hotelBookingContext = new HotelBookingContext();
+        }
+        /// <inheritdoc/>
+        public async Task<List<(int Id, string User, string Email, string First, string Last)>> GetActiveUsersWithProfiles()
+        {
+            var data = await hotelBookingContext.Users
                 .Where(u => u.IsActive == true)
-                .Select(u => new {
+                .Select(u => new
+                {
                     u.UserId,
-                    u.Username,
-                    u.Email,
-                    u.UserProfile!.FirstName,
-                    u.UserProfile.LastName,
-                    u.UserProfile.PhoneNumber
-                }).ToListAsync();
+                    Username = u.Username ?? string.Empty,
+                    Email = u.Email ?? string.Empty,
+                    FirstName = u.UserProfile!.FirstName ?? string.Empty,
+                    LastName = u.UserProfile.LastName ?? string.Empty
+                })
+                .ToListAsync();
+
+            return data.Select(x => (x.UserId, x.Username, x.Email, x.FirstName, x.LastName)).ToList();
         }
 
-
-        public async Task GetAvailableRoomsWithImages()
+        /// <inheritdoc/>
+        public async Task<List<(string Hotel, string Room, string Type, string HotelImg, string RoomImg)>> GetAvailableRoomsWithImages()
         {
-            var result = await hotelBookingContext.Rooms
+            var data = await hotelBookingContext.Rooms
                 .Where(r => r.IsAvailable == true)
-                .Select(r => new {
-                    HotelName = r.Hotel.Name,
+                .Select(r => new
+                {
+                    Hotel = r.Hotel.Name,
                     r.RoomNumber,
-                    r.Type.TypeName,
-                    HotelPhoto = r.Hotel.HotelImages
-                        .FirstOrDefault(hi => hi.IsPrimary == true) != null
-                        ? r.Hotel.HotelImages.FirstOrDefault(hi => hi.IsPrimary == true)!.ImageUrl
-                        : "no-hotel-image.jpg",
-                    RoomPhoto = r.RoomImages.FirstOrDefault() != null
-                        ? r.RoomImages.FirstOrDefault()!.ImageUrl
-                        : "no-room-image.jpg"
+                    Type = r.Type.TypeName,
+                    HImg = r.Hotel.HotelImages.Where(i => i.IsPrimary == true).Select(i => i.ImageUrl).FirstOrDefault() ?? "no-h.jpg",
+                    RImg = r.RoomImages.Select(i => i.ImageUrl).FirstOrDefault() ?? "no-r.jpg"
                 }).ToListAsync();
+            return data.Select(x => (x.Hotel, x.RoomNumber, x.Type, x.HImg, x.RImg)).ToList();
         }
 
-        public async Task GetAllUsersWithProfiles()
+        /// <inheritdoc/>
+        public async Task<List<(int Id, string User, string Name)>> GetAllUsersWithProfiles()
         {
-            var result = await hotelBookingContext.Users
-                .Select(static u => new {
-                    u.UserId,
-                    u.Username,
-                    u.UserProfile!.FirstName,
-                    u.UserProfile.LastName,
-                    u.UserProfile.PhoneNumber
-                }).ToListAsync();
+            var data = await hotelBookingContext.Users
+                .Select(u => new { u.UserId, u.Username, FullName = u.UserProfile!.FirstName + " " + u.UserProfile.LastName })
+                .ToListAsync();
+            return data.Select(x => (x.UserId, x.Username, x.FullName)).ToList();
         }
 
-
-        public async Task GetHotelsWithImagesLeft()
+        /// <inheritdoc/>
+        public async Task<List<(string Hotel, string Img)>> GetHotelsWithImagesLeft()
         {
-            var result = await hotelBookingContext.Hotels
-                .SelectMany(h => h.HotelImages.DefaultIfEmpty(), (h, hi) => new {
-                    h.HotelId,
-                    HotelName = h.Name,
-                    ImageUrl = hi != null ? hi.ImageUrl : "no-image.jpg",
-                    IsPrimary = hi != null ? hi.IsPrimary : false
-                }).ToListAsync();
+            var data = await hotelBookingContext.Hotels
+                .SelectMany(h => h.HotelImages.DefaultIfEmpty(), (h, img) => new { h.Name, Url = img != null ? (img.ImageUrl ?? "no-img.jpg") : "no-img.jpg" })
+                .ToListAsync();
+            return data.Select(x => (x.Name, x.Url)).ToList();
         }
 
-
-        public async Task GetBookingDetails()
+        /// <inheritdoc/>
+        public async Task<List<(string Img, string Hotel)>> GetHotelsWithImagesRight()
         {
-            var result = await hotelBookingContext.Bookings
-                .Select(b => new {
-                    b.BookingId,
-                    b.User.Username,
-                    HotelName = b.Room.Hotel.Name,
-                    b.Room.RoomNumber,
-                    b.CheckInDate,
-                    b.CheckOutDate,
-                    b.TotalPrice
-                }).ToListAsync();
+            var data = await hotelBookingContext.HotelImages
+                .Select(i => new { i.ImageUrl, Hotel = i.Hotel.Name })
+                .ToListAsync();
+            return data.Select(x => (x.ImageUrl, x.Hotel)).ToList();
+        }
+        /// <inheritdoc/>
+        public async Task<List<(int Id, string User, string Hotel, decimal Price)>> GetBookingDetails()
+        {
+            var data = await hotelBookingContext.Bookings
+                .Select(b => new { b.BookingId, b.User.Username, Hotel = b.Room.Hotel.Name, b.TotalPrice })
+                .ToListAsync();
+            return data.Select(x => (x.BookingId, x.Username, x.Hotel, x.TotalPrice ?? 0)).ToList();
         }
 
-       
-        public async Task GetUserBookingCounts()
+        /// <inheritdoc/>
+        public async Task<List<(string User, int Count)>> GetUserBookingCounts()
         {
-            var result = await hotelBookingContext.Users
-                .Select(u => new {
-                    u.UserId,
-                    u.Username,
-                    TotalBookings = u.Bookings.Count()
-                }).ToListAsync();
+            var data = await hotelBookingContext.Users
+                .Select(u => new { u.Username, Count = u.Bookings.Count() })
+                .ToListAsync();
+            return data.Select(x => (x.Username, x.Count)).ToList();
         }
 
-       
-        public async Task GetHotelAverageRating()
+        /// <inheritdoc/>
+        public async Task<List<(string Hotel, double Avg)>> GetHotelAverageRating()
         {
-            var result = await hotelBookingContext.Hotels
-                .Select(h => new {
-                    h.HotelId,
-                    HotelName = h.Name,
-                    AverageRating = h.Reviews.Any() ? h.Reviews.Average(r => r.Rating) : 0
-                }).ToListAsync();
+            var data = await hotelBookingContext.Hotels
+                .Select(h => new { h.Name, Avg = h.Reviews.Average(r => (double?)r.Rating) ?? 0 })
+                .ToListAsync();
+            return data.Select(x => (x.Name, x.Avg)).ToList();
         }
 
-       
-        public async Task GetHotelTotalIncome()
+        /// <inheritdoc/>
+        public async Task<List<(string Hotel, decimal Income)>> GetHotelTotalIncome()
         {
-            var result = await hotelBookingContext.Hotels
-                .Select(h => new {
-                    HotelName = h.Name,
-                    TotalIncome = h.Rooms.SelectMany(r => r.Bookings).Sum(b => (decimal?)b.TotalPrice) ?? 0
-                }).ToListAsync();
+            var data = await hotelBookingContext.Hotels
+                .Select(h => new { h.Name, Income = h.Rooms.SelectMany(r => r.Bookings).Sum(b => (decimal?)b.TotalPrice) ?? 0 })
+                .ToListAsync();
+            return data.Select(x => (x.Name, x.Income)).ToList();
         }
 
-    
-        public async Task GetUserBookingDates()
+        /// <inheritdoc/>
+        public async Task<List<(int UserId, DateOnly First, DateOnly Last)>> GetUserBookingDates()
         {
-            var result = await hotelBookingContext.Bookings
+            var data = await hotelBookingContext.Bookings
                 .GroupBy(b => b.UserId)
-                .Select(g => new {
-                    UserId = g.Key,
-                    FirstBooking = g.Min(b => b.CheckInDate),
-                    LastBooking = g.Max(b => b.CheckOutDate)
-                }).ToListAsync();
+                .Select(g => new { UserId = g.Key, First = g.Min(b => b.CheckInDate), Last = g.Max(b => b.CheckOutDate) })
+                .ToListAsync();
+            return data.Select(x => (x.UserId, x.First, x.Last)).ToList();
         }
 
-       
-        public async Task GetRoomTypePriceRange()
+        /// <inheritdoc/>
+        public async Task<List<(string Type, decimal Min, decimal Max)>> GetRoomTypePriceRange()
         {
-            var result = await hotelBookingContext.RoomTypes
+            var data = await hotelBookingContext.RoomTypes
                 .GroupBy(rt => rt.TypeName)
-                .Select(g => new {
-                    TypeName = g.Key,
-                    MinPrice = g.Min(rt => rt.BasePrice),
-                    MaxPrice = g.Max(rt => rt.BasePrice)
-                }).ToListAsync();
+                .Select(g => new { Type = g.Key, Min = g.Min(x => x.BasePrice), Max = g.Max(x => x.BasePrice) })
+                .ToListAsync();
+            return data.Select(x => (x.Type, x.Min, x.Max)).ToList();
         }
 
-        
-        public async Task GetCityRatingRange()
+        /// <inheritdoc/>
+        public async Task<List<(string City, decimal Min, decimal Max)>> GetCityRatingRange()
         {
-            var result = await hotelBookingContext.Hotels
+            var data = await hotelBookingContext.Hotels
                 .Where(h => h.Rating >= 3)
                 .GroupBy(h => h.City)
-                .Select(g => new {
-                    City = g.Key,
-                    MinRating = g.Min(h => h.Rating),
-                    MaxRating = g.Max(h => h.Rating)
-                }).ToListAsync();
+                .Select(g => new { City = g.Key, Min = g.Min(x => x.Rating ?? 0), Max = g.Max(x => x.Rating ?? 0) })
+                .ToListAsync();
+            return data.Select(x => (x.City, x.Min, x.Max)).ToList();
         }
 
-   
-        public async Task GetRoomsInTbilisiByPrice()
+        /// <inheritdoc/>
+        public async Task<List<(string Room, decimal Price, string Hotel)>> GetRoomsInTbilisiByPrice()
         {
-            var result = await hotelBookingContext.Rooms
+            var data = await hotelBookingContext.Rooms
                 .Where(r => r.Hotel.City.Equals("tbilisi", StringComparison.CurrentCultureIgnoreCase))
                 .OrderBy(r => r.Type.BasePrice)
-                .Select(r => new {
-                    r.RoomId,
-                    r.RoomNumber,
-                    r.Type.BasePrice,
-                    HotelName = r.Hotel.Name
-                }).ToListAsync();
+                .Select(r => new { r.RoomNumber, r.Type.BasePrice, HotelName = r.Hotel.Name })
+                .ToListAsync();
+            return data.Select(x => (x.RoomNumber, x.BasePrice, x.HotelName)).ToList();
         }
 
-       
-        public async Task GetHotelsByRevenue()
-        {
-            var result = await hotelBookingContext.Hotels
-                .Select(h => new {
-                    h.HotelId,
-                    h.Name,
-                    TotalRevenue = h.Rooms.SelectMany(r => r.Bookings).Sum(b => (decimal?)b.TotalPrice) ?? 0
-                })
-                .OrderByDescending(x => x.TotalRevenue)
-                .ToListAsync();
-        }
+      
     }
 }

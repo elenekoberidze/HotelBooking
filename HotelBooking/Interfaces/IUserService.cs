@@ -49,5 +49,7 @@ namespace HotelBooking.Interfaces
         /// <param name="id">User Id</param>
         /// <returns>User</returns>
         Task<User?> GetUserByIdAsync(int id);
+        
+
     }
 }

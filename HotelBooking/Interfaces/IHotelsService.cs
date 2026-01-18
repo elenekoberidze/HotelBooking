@@ -40,5 +40,6 @@ namespace HotelBooking.Interfaces
         /// <param name="id">Hotel Id.</param>
         /// <returns>Hotel</returns>
         Task<Hotel?> GetHotelByIdAsync(int id);
+       
     }
 }

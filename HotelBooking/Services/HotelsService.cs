@@ -55,5 +55,6 @@ namespace HotelBooking.Services
             hotel.City = city;
             await hotelBookingContext.SaveChangesAsync();
         }
+
     }
 }

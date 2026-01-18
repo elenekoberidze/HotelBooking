@@ -7,8 +7,6 @@ using System.Threading.Tasks;
 
 namespace HotelBooking.Interfaces
 {
-
-    
     public interface IBookingsService
     {
         /// <summary>
@@ -46,6 +44,7 @@ namespace HotelBooking.Interfaces
         /// <param name="id">Booking ID.</param>
         /// <returns>Booking details or null if not found.</returns>
         Task<Booking?> GetBookingByIdAsync(int id);
+        
     }
 }
 
