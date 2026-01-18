@@ -149,7 +149,89 @@ public partial class HotelBookingContext : DbContext
         });
 
         OnModelCreatingPartial(modelBuilder);
+
+        modelBuilder.Entity<User>().HasData(
+          new User
+          {
+              UserId = 1,
+              Username = "admin",
+              Email = "admin@hotel.com",
+              PasswordHash = "hashed_password",
+              IsActive = true
+          },
+          new User
+          {
+              UserId = 2,
+              Username = "user1",
+              Email = "user1@mail.com",
+              PasswordHash = "hashed_password",
+              IsActive = true
+          }
+      );
+
+
+        modelBuilder.Entity<UserProfile>().HasData(
+            new UserProfile
+            {
+                ProfileId = 1,
+                UserId = 1,
+                FirstName = "Admin",
+                LastName = "User",
+                PhoneNumber = "555-111-222",
+                Address = "Tbilisi"
+            },
+            new UserProfile
+            {
+                ProfileId = 2,
+                UserId = 2,
+                FirstName = "John",
+                LastName = "Doe",
+                PhoneNumber = "555-333-444",
+                Address = "Batumi"
+            }
+        );
+
+
+        modelBuilder.Entity<Hotel>().HasData(
+            new Hotel
+            {
+                HotelId = 1,
+                Name = "Sunrise Hotel",
+                Description = "Modern hotel in city center",
+                City = "Tbilisi",
+                Address = "Rustaveli Avenue 10",
+                Rating = 4.5m
+            },
+            new Hotel
+            {
+                HotelId = 2,
+                Name = "Sea View Resort",
+                Description = "Resort near the sea",
+                City = "Batumi",
+                Address = "Batumi Boulevard 25",
+                Rating = 4.8m
+            }
+        );
+
+
+        modelBuilder.Entity<RoomType>().HasData(
+            new RoomType
+            {
+                TypeId = 1,
+                TypeName = "Single",
+                BasePrice = 120.00m
+            },
+            new RoomType
+            {
+                TypeId = 2,
+                TypeName = "Double",
+                BasePrice = 200.00m
+            }
+        );
     }
+    
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
-}
+    
+};
+
