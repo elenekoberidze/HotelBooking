@@ -21,7 +21,9 @@ namespace HotelBooking.Services
                 .AnyAsync(u => u.Email == user.Email);
 
             if (emailExists)
+            {
                 throw new Exception("Email already exists");
+            }
 
             await hotelBookingContext.Users.AddAsync(user);
             await hotelBookingContext.UserProfiles.AddAsync(profile);
