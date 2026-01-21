@@ -4,7 +4,7 @@ using HotelBooking.Interfaces;
 using HotelBooking.Models;
 using HotelBooking.Services;
 using Microsoft.EntityFrameworkCore;
-using HotelBooking.ConsoleApp;
+using HotelBooking.ConsoleUI;
 
 var context = new HotelBookingContext();
 IUserService userService = new UsersService(context);
