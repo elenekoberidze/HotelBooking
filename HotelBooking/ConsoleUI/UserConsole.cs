@@ -3,7 +3,7 @@ using System;
 using HotelBooking.Models;
 using HotelBooking.Interfaces;
 
-namespace HotelBooking.ConsoleApp
+namespace HotelBooking.ConsoleUI
 {
     internal class UserConsole(IUserService userService)
     {
